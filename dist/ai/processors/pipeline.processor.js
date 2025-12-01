@@ -56,7 +56,8 @@ let PipelineProcessor = PipelineProcessor_1 = class PipelineProcessor {
                 const startTime = Date.now();
                 const prompt = this.aiService.buildPrompt(step.prompt, submission.data, previousOutputs);
                 this.logger.log(`Executing step ${step.stepNumber} for submission ${submissionId}`);
-                const { text, tokenCount } = await this.aiService.generateResponse(prompt, step.model || 'claude-sonnet-4-20250514');
+                const modelToUse = step.model || 'gemini-1.5-flash';
+                const { text, tokenCount } = await this.aiService.generateResponse(prompt, modelToUse);
                 const duration = Date.now() - startTime;
                 await this.submissionsService.createStepOutput({
                     submissionId,
@@ -66,14 +67,14 @@ let PipelineProcessor = PipelineProcessor_1 = class PipelineProcessor {
                     output: text,
                     tokenCount,
                     duration,
-                    model: step.model || 'claude-sonnet-4-20250514',
+                    model: modelToUse,
                     executedAt: new Date(),
                 });
                 previousOutputs.push({
                     stepNumber: step.stepNumber,
                     output: text,
                 });
-                this.logger.log(`Completed step ${step.stepNumber} in ${duration}ms`);
+                this.logger.log(`Completed step ${step.stepNumber} in ${duration}ms using ${modelToUse}`);
             }
             await this.submissionsService.updateStatus(submissionId, 'completed');
             this.logger.log(`Pipeline processing completed for submission: ${submissionId}`);

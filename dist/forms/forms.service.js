@@ -42,11 +42,24 @@ let FormsService = class FormsService {
         }
         return form;
     }
-    async findByPublicId(publicId) {
-        const form = await this.formModel.findOne({ publicId, isActive: true }).exec();
+    async findByPublicId(identifier) {
+        console.log('🔍 Looking for form with identifier:', identifier);
+        let form = await this.formModel.findOne({
+            publicId: identifier,
+            isActive: true
+        }).exec();
+        if (!form && identifier.match(/^[0-9a-fA-F]{24}$/)) {
+            console.log('🔍 Trying to find by _id instead...');
+            form = await this.formModel.findOne({
+                _id: identifier,
+                isActive: true
+            }).exec();
+        }
         if (!form) {
+            console.log('❌ Form not found with identifier:', identifier);
             throw new common_1.NotFoundException('Form not found');
         }
+        console.log('✅ Form found:', form._id);
         return form;
     }
     async update(id, userId, updateFormDto) {

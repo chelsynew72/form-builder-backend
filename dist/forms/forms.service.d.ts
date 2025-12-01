@@ -8,7 +8,7 @@ export declare class FormsService {
     create(userId: string, createFormDto: CreateFormDto): Promise<Form>;
     findAll(userId: string): Promise<Form[]>;
     findOne(id: string, userId: string): Promise<Form>;
-    findByPublicId(publicId: string): Promise<Form>;
+    findByPublicId(identifier: string): Promise<Form>;
     update(id: string, userId: string, updateFormDto: UpdateFormDto): Promise<Form>;
     delete(id: string, userId: string): Promise<void>;
     incrementSubmissionCount(formId: string): Promise<void>;

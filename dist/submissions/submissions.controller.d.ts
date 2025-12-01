@@ -1,14 +1,18 @@
 import { SubmissionsService } from './submissions.service';
 import { FormsService } from '../forms/forms.service';
-import { CreateSubmissionDto } from './dto/create-submission.dto';
 import { QuerySubmissionsDto } from './dto/query-submissions.dto';
 export declare class SubmissionsController {
     private readonly submissionsService;
     private readonly formsService;
     constructor(submissionsService: SubmissionsService, formsService: FormsService);
-    create(createSubmissionDto: CreateSubmissionDto, ip: string, userAgent: string): Promise<{
+    test(): {
+        message: string;
+    };
+    create(createSubmissionDto: any, ip: string, userAgent: string): Promise<{
         success: boolean;
-        submissionId: import("mongoose").Types.ObjectId;
+        data: {
+            submissionId: string;
+        };
         message: string;
     }>;
     findAll(formId: string, query: QuerySubmissionsDto): Promise<{

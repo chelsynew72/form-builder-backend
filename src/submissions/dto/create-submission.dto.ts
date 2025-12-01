@@ -1,3 +1,9 @@
+import { IsNotEmpty, IsObject } from 'class-validator';
+
 export class CreateSubmissionDto {
-  formId: any;
+  @IsNotEmpty()
+  formId: string;
+
+  @IsObject()
+  data: Record<string, any>;
 }

@@ -1,4 +1,3 @@
-
 import { Processor, Process } from '@nestjs/bull';
 import bull from 'bull';
 import { Injectable, Logger } from '@nestjs/common';
@@ -56,10 +55,13 @@ export class PipelineProcessor {
 
         this.logger.log(`Executing step ${step.stepNumber} for submission ${submissionId}`);
 
+        
+        const modelToUse = step.model || 'gemini-1.5-flash'; 
+
         // Call AI API
         const { text, tokenCount } = await this.aiService.generateResponse(
           prompt,
-          step.model || 'claude-sonnet-4-20250514',
+          modelToUse,
         );
 
         const duration = Date.now() - startTime;
@@ -73,7 +75,7 @@ export class PipelineProcessor {
           output: text,
           tokenCount,
           duration,
-          model: step.model || 'claude-sonnet-4-20250514',
+          model: modelToUse, // Use the correct model name
           executedAt: new Date(),
         });
 
@@ -83,7 +85,7 @@ export class PipelineProcessor {
           output: text,
         });
 
-        this.logger.log(`Completed step ${step.stepNumber} in ${duration}ms`);
+        this.logger.log(`Completed step ${step.stepNumber} in ${duration}ms using ${modelToUse}`);
       }
 
       // Update submission status to completed

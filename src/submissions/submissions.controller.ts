@@ -1,5 +1,5 @@
 
-import { Controller, Get, Post, Delete, Body, Param, Query, UseGuards, Request, Ip, Headers } from '@nestjs/common';
+import { Controller, Get, Post, Delete, Body, Param, Query, UseGuards, Request, Ip, Headers, ValidationPipe } from '@nestjs/common';
 import { SubmissionsService } from './submissions.service';
 import { FormsService } from '../forms/forms.service';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
@@ -13,29 +13,47 @@ export class SubmissionsController {
     private readonly formsService: FormsService,
   ) {}
 
+   @Get('test')
+  test() {
+    return { message: 'Submissions controller is working!' };
+  }
+
   @Post()
-  async create(
-    @Body() createSubmissionDto: CreateSubmissionDto,
-    @Ip() ip: string,
-    @Headers('user-agent') userAgent: string,
-  ) {
+async create(
+  @Body() createSubmissionDto: any, // Using 'any' temporarily to avoid validation issues
+  @Ip() ip: string,
+  @Headers('user-agent') userAgent: string,
+) {
+  console.log('📝 Received submission:', createSubmissionDto);
+  
+  try {
     // Verify form exists and is active
-    await this.formsService.findByPublicId(createSubmissionDto.formId as any);
+    const form = await this.formsService.findByPublicId(createSubmissionDto.formId);
+    console.log('✅ Form found:', form._id);
     
     const submission = await this.submissionsService.create({
-      ...createSubmissionDto,
+      formId: form._id, // Use the actual MongoDB _id, not the publicId
+      data: createSubmissionDto.data,
       ipAddress: ip,
       userAgent,
     } as any);
+    
+    console.log('✅ Submission created:', submission._id);
 
-    await this.formsService.incrementSubmissionCount(createSubmissionDto.formId as any);
+    await this.formsService.incrementSubmissionCount(form._id.toString());
 
     return { 
       success: true, 
-      submissionId: submission._id,
+      data: {
+        submissionId: submission._id.toString(), // This is what your frontend expects!
+      },
       message: 'Form submitted successfully. Processing started.' 
     };
+  } catch (error) {
+    console.error('❌ Submission error:', error);
+    throw error;
   }
+}
 
   @Get('form/:formId')
   @UseGuards(JwtAuthGuard)

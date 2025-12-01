@@ -19,21 +19,16 @@ const mongoose_2 = require("mongoose");
 const pipeline_schema_1 = require("./schemas/pipeline.schema");
 let PipelinesService = class PipelinesService {
     pipelineModel;
-    findAll() {
-        throw new Error('Method not implemented.');
-    }
-    findOne(arg0) {
-        throw new Error('Method not implemented.');
-    }
-    remove(arg0) {
-        throw new Error('Method not implemented.');
-    }
     constructor(pipelineModel) {
         this.pipelineModel = pipelineModel;
     }
-    async create(createPipelineDto) {
-        const pipeline = new this.pipelineModel(createPipelineDto);
-        return pipeline.save();
+    async createOrUpdate(createPipelineDto) {
+        const { formId, ...pipelineData } = createPipelineDto;
+        const pipeline = await this.pipelineModel.findOneAndUpdate({ formId }, { formId, ...pipelineData }, {
+            new: true,
+            upsert: true,
+        }).exec();
+        return pipeline;
     }
     async findByFormId(formId) {
         return this.pipelineModel.findOne({ formId }).exec();
