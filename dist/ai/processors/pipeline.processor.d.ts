@@ -1,4 +1,4 @@
-import bull from 'bull';
+import type { Job } from 'bull';
 import { Model } from 'mongoose';
 import { AiService } from '../ai.service';
 import { SubmissionsService } from '../../submissions/submissions.service';
@@ -11,5 +11,5 @@ export declare class PipelineProcessor {
     private submissionModel;
     private readonly logger;
     constructor(aiService: AiService, submissionsService: SubmissionsService, pipelinesService: PipelinesService, submissionModel: Model<Submission>);
-    handlePipelineProcessing(job: bull.Job): Promise<void>;
+    handlePipelineProcessing(job: Job): Promise<void>;
 }

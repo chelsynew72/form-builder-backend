@@ -35,6 +35,7 @@ let SubmissionsService = class SubmissionsService {
             submittedAt: new Date(),
         });
         const savedSubmission = await submission.save();
+        console.log('✅ Submission created:', savedSubmission._id);
         await this.pipelineQueue.add('process-pipeline', {
             submissionId: savedSubmission._id.toString(),
             formId: savedSubmission.formId.toString(),
@@ -43,20 +44,28 @@ let SubmissionsService = class SubmissionsService {
     }
     async findAll(formId, query) {
         const { page = 1, limit = 20, status, search } = query;
-        const filter = { formId };
+        console.log('🔍 Finding submissions for formId:', formId);
+        const filter = {
+            formId: new mongoose_2.Types.ObjectId(formId)
+        };
         if (status) {
             filter.status = status;
         }
         if (search) {
-            filter['data'] = { $regex: search, $options: 'i' };
+            filter.$or = [
+                { 'data': { $regex: search, $options: 'i' } }
+            ];
         }
+        console.log('🔍 Query filter:', filter);
         const total = await this.submissionModel.countDocuments(filter);
+        console.log('📊 Total submissions found:', total);
         const data = await this.submissionModel
             .find(filter)
             .sort({ submittedAt: -1 })
             .skip((page - 1) * limit)
             .limit(limit)
             .exec();
+        console.log('📊 Submissions returned:', data.length);
         return { data, total };
     }
     async findOne(id) {
@@ -65,7 +74,7 @@ let SubmissionsService = class SubmissionsService {
             throw new common_1.NotFoundException('Submission not found');
         }
         const outputs = await this.stepOutputModel
-            .find({ submissionId: id })
+            .find({ submissionId: new mongoose_2.Types.ObjectId(id) })
             .sort({ stepNumber: 1 })
             .exec();
         return { submission, outputs };
@@ -86,7 +95,7 @@ let SubmissionsService = class SubmissionsService {
     }
     async delete(id) {
         await this.submissionModel.deleteOne({ _id: id }).exec();
-        await this.stepOutputModel.deleteMany({ submissionId: id }).exec();
+        await this.stepOutputModel.deleteMany({ submissionId: new mongoose_2.Types.ObjectId(id) }).exec();
     }
 };
 exports.SubmissionsService = SubmissionsService;

@@ -11,14 +11,10 @@ var __metadata = (this && this.__metadata) || function (k, v) {
 var __param = (this && this.__param) || function (paramIndex, decorator) {
     return function (target, key) { decorator(target, key, paramIndex); }
 };
-var __importDefault = (this && this.__importDefault) || function (mod) {
-    return (mod && mod.__esModule) ? mod : { "default": mod };
-};
 var PipelineProcessor_1;
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.PipelineProcessor = void 0;
 const bull_1 = require("@nestjs/bull");
-const bull_2 = __importDefault(require("bull"));
 const common_1 = require("@nestjs/common");
 const mongoose_1 = require("@nestjs/mongoose");
 const mongoose_2 = require("mongoose");
@@ -45,36 +41,44 @@ let PipelineProcessor = PipelineProcessor_1 = class PipelineProcessor {
             await this.submissionsService.updateStatus(submissionId, 'processing');
             const submission = await this.submissionModel.findById(submissionId).exec();
             if (!submission) {
-                throw new Error(`Submission ${submissionId} not found`);
+                this.logger.warn(`Submission not found: ${submissionId}`);
+                await this.submissionsService.updateStatus(submissionId, 'failed', 'Submission not found');
+                return;
             }
+            console.log('🔍 Looking for pipeline with formId:', formId);
             const pipeline = await this.pipelinesService.findByFormId(formId);
+            console.log('📋 Pipeline found:', pipeline ? 'YES' : 'NO');
+            if (pipeline) {
+                console.log('📋 Pipeline steps:', pipeline.steps?.length || 0);
+            }
             if (!pipeline || !pipeline.steps || pipeline.steps.length === 0) {
-                throw new Error('Pipeline not found or has no steps');
+                this.logger.warn(`No pipeline found or pipeline has no steps for form: ${formId}`);
+                await this.submissionsService.updateStatus(submissionId, 'completed');
+                return;
             }
             const previousOutputs = [];
             for (const step of pipeline.steps) {
                 const startTime = Date.now();
-                const prompt = this.aiService.buildPrompt(step.prompt, submission.data, previousOutputs);
                 this.logger.log(`Executing step ${step.stepNumber} for submission ${submissionId}`);
-                const modelToUse = step.model || 'gemini-1.5-flash';
-                const { text, tokenCount } = await this.aiService.generateResponse(prompt, modelToUse);
+                const prompt = this.aiService.buildPrompt(step.prompt, submission.data, previousOutputs);
+                const { text, tokenCount } = await this.aiService.generateResponse(prompt, step.model || 'gemini-1.5-pro');
                 const duration = Date.now() - startTime;
                 await this.submissionsService.createStepOutput({
-                    submissionId,
+                    submissionId: new mongoose_2.Types.ObjectId(submissionId),
                     stepNumber: step.stepNumber,
                     stepName: step.name,
-                    prompt: step.prompt,
+                    prompt: prompt,
                     output: text,
                     tokenCount,
                     duration,
-                    model: modelToUse,
+                    model: step.model || 'gemini-1.5-pro',
                     executedAt: new Date(),
                 });
                 previousOutputs.push({
                     stepNumber: step.stepNumber,
                     output: text,
                 });
-                this.logger.log(`Completed step ${step.stepNumber} in ${duration}ms using ${modelToUse}`);
+                this.logger.log(`Completed step ${step.stepNumber} in ${duration}ms`);
             }
             await this.submissionsService.updateStatus(submissionId, 'completed');
             this.logger.log(`Pipeline processing completed for submission: ${submissionId}`);

@@ -24,23 +24,31 @@ let PipelinesService = class PipelinesService {
     }
     async createOrUpdate(createPipelineDto) {
         const { formId, ...pipelineData } = createPipelineDto;
-        const pipeline = await this.pipelineModel.findOneAndUpdate({ formId }, { formId, ...pipelineData }, {
+        const pipeline = await this.pipelineModel.findOneAndUpdate({ formId: new mongoose_2.Types.ObjectId(formId) }, { formId: new mongoose_2.Types.ObjectId(formId), ...pipelineData }, {
             new: true,
             upsert: true,
         }).exec();
+        console.log('✅ Pipeline saved for formId:', formId);
         return pipeline;
     }
     async findByFormId(formId) {
-        return this.pipelineModel.findOne({ formId }).exec();
+        console.log('🔍 Finding pipeline for formId:', formId);
+        const pipeline = await this.pipelineModel
+            .findOne({ formId: new mongoose_2.Types.ObjectId(formId) })
+            .exec();
+        console.log('📋 Pipeline found:', pipeline ? 'YES' : 'NO');
+        return pipeline;
     }
     async update(formId, updatePipelineDto) {
         const pipeline = await this.pipelineModel
-            .findOneAndUpdate({ formId }, updatePipelineDto, { new: true, upsert: true })
+            .findOneAndUpdate({ formId: new mongoose_2.Types.ObjectId(formId) }, updatePipelineDto, { new: true, upsert: true })
             .exec();
         return pipeline;
     }
     async delete(formId) {
-        await this.pipelineModel.deleteOne({ formId }).exec();
+        await this.pipelineModel
+            .deleteOne({ formId: new mongoose_2.Types.ObjectId(formId) })
+            .exec();
     }
 };
 exports.PipelinesService = PipelinesService;

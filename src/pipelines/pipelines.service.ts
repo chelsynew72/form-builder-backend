@@ -1,7 +1,7 @@
 // backend/src/pipelines/pipelines.service.ts
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
-import { Model } from 'mongoose';
+import { Model, Types } from 'mongoose';
 import { Pipeline } from './schemas/pipeline.schema';
 import { CreatePipelineDto } from './dto/create-pipeline.dto';
 import { UpdatePipelineDto } from './dto/update-pipeline.dto';
@@ -12,31 +12,35 @@ export class PipelinesService {
     @InjectModel(Pipeline.name) private pipelineModel: Model<Pipeline>,
   ) {}
 
-  // ✅ FIXED: Use upsert to create OR update
-  async createOrUpdate(createPipelineDto: CreatePipelineDto & { formId?: string }): Promise<Pipeline> {
+  async createOrUpdate(createPipelineDto: CreatePipelineDto): Promise<Pipeline> {
     const { formId, ...pipelineData } = createPipelineDto;
 
-    // Find existing pipeline or create new one
     const pipeline = await this.pipelineModel.findOneAndUpdate(
-      { formId },
-      { formId, ...pipelineData },
+      { formId: new Types.ObjectId(formId) }, // ✅ Convert to ObjectId
+      { formId: new Types.ObjectId(formId), ...pipelineData },
       { 
-        new: true,      // Return updated document
-        upsert: true,   // Create if doesn't exist
+        new: true,
+        upsert: true,
       }
     ).exec();
 
+    console.log('✅ Pipeline saved for formId:', formId);
     return pipeline;
   }
 
   async findByFormId(formId: string): Promise<Pipeline | null> {
-    return this.pipelineModel.findOne({ formId }).exec();
+    console.log('🔍 Finding pipeline for formId:', formId);
+    const pipeline = await this.pipelineModel
+      .findOne({ formId: new Types.ObjectId(formId) }) // ✅ Convert to ObjectId
+      .exec();
+    console.log('📋 Pipeline found:', pipeline ? 'YES' : 'NO');
+    return pipeline;
   }
 
   async update(formId: string, updatePipelineDto: UpdatePipelineDto): Promise<Pipeline> {
     const pipeline = await this.pipelineModel
       .findOneAndUpdate(
-        { formId },
+        { formId: new Types.ObjectId(formId) }, // ✅ Convert to ObjectId
         updatePipelineDto,
         { new: true, upsert: true }
       )
@@ -45,6 +49,8 @@ export class PipelinesService {
   }
 
   async delete(formId: string): Promise<void> {
-    await this.pipelineModel.deleteOne({ formId }).exec();
+    await this.pipelineModel
+      .deleteOne({ formId: new Types.ObjectId(formId) }) // ✅ Convert to ObjectId
+      .exec();
   }
 }

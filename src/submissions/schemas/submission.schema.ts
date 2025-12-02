@@ -4,11 +4,11 @@ import { Document, Types } from 'mongoose';
 
 @Schema({ timestamps: true })
 export class Submission extends Document {
-  @Prop({ type: Types.ObjectId, ref: 'Form', required: true })
+  @Prop({ type: Types.ObjectId, ref: 'Form', required: true }) // ✅ Make sure this is ObjectId
   formId: Types.ObjectId;
 
   @Prop({ type: Object, required: true })
-  data: Record<string, any>; // Form field values
+  data: Record<string, any>;
 
   @Prop({ 
     type: String, 

@@ -1,7 +1,7 @@
-
+// backend/src/submissions/submissions.service.ts
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
-import { Model } from 'mongoose';
+import { Model, Types } from 'mongoose';
 import { InjectQueue } from '@nestjs/bull';
 import type { Queue } from 'bull';
 import { Submission } from './schemas/submission.schema';
@@ -25,6 +25,8 @@ export class SubmissionsService {
     });
     const savedSubmission = await submission.save();
 
+    console.log('✅ Submission created:', savedSubmission._id);
+
     // Add to queue for processing
     await this.pipelineQueue.add('process-pipeline', {
       submissionId: savedSubmission._id.toString(),
@@ -36,23 +38,38 @@ export class SubmissionsService {
 
   async findAll(formId: string, query: QuerySubmissionsDto): Promise<{ data: Submission[], total: number }> {
     const { page = 1, limit = 20, status, search } = query;
-    const filter: any = { formId };
+
+    console.log('🔍 Finding submissions for formId:', formId); // Debug log
+
+    // Build filter - IMPORTANT: Convert string to ObjectId
+    const filter: any = { 
+      formId: new Types.ObjectId(formId) // ✅ Convert to ObjectId
+    };
 
     if (status) {
       filter.status = status;
     }
 
     if (search) {
-      filter['data'] = { $regex: search, $options: 'i' };
+      // Search in data field
+      filter.$or = [
+        { 'data': { $regex: search, $options: 'i' } }
+      ];
     }
 
+    console.log('🔍 Query filter:', filter); // Debug log
+
     const total = await this.submissionModel.countDocuments(filter);
+    console.log('📊 Total submissions found:', total); // Debug log
+
     const data = await this.submissionModel
       .find(filter)
       .sort({ submittedAt: -1 })
       .skip((page - 1) * limit)
       .limit(limit)
       .exec();
+
+    console.log('📊 Submissions returned:', data.length); // Debug log
 
     return { data, total };
   }
@@ -64,7 +81,7 @@ export class SubmissionsService {
     }
 
     const outputs = await this.stepOutputModel
-      .find({ submissionId: id })
+      .find({ submissionId: new Types.ObjectId(id) }) // ✅ Convert to ObjectId
       .sort({ stepNumber: 1 })
       .exec();
 
@@ -89,6 +106,6 @@ export class SubmissionsService {
 
   async delete(id: string): Promise<void> {
     await this.submissionModel.deleteOne({ _id: id }).exec();
-    await this.stepOutputModel.deleteMany({ submissionId: id }).exec();
+    await this.stepOutputModel.deleteMany({ submissionId: new Types.ObjectId(id) }).exec();
   }
 }

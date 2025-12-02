@@ -55,6 +55,7 @@ let SubmissionsController = class SubmissionsController {
         }
     }
     findAll(formId, query) {
+        console.log('📥 Received request for formId:', formId);
         return this.submissionsService.findAll(formId, query);
     }
     findOne(id) {

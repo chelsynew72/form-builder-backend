@@ -1,8 +1,9 @@
+// backend/src/ai/processors/pipeline.processor.ts
 import { Processor, Process } from '@nestjs/bull';
-import bull from 'bull';
+import type { Job } from 'bull';
 import { Injectable, Logger } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
-import { Model } from 'mongoose';
+import { Model, Types } from 'mongoose';
 import { AiService } from '../ai.service';
 import { SubmissionsService } from '../../submissions/submissions.service';
 import { PipelinesService } from '../../pipelines/pipelines.service';
@@ -21,7 +22,7 @@ export class PipelineProcessor {
   ) {}
 
   @Process('process-pipeline')
-  async handlePipelineProcessing(job: bull.Job) {
+  async handlePipelineProcessing(job: Job) {
     const { submissionId, formId } = job.data;
     this.logger.log(`Processing pipeline for submission: ${submissionId}`);
 
@@ -31,13 +32,26 @@ export class PipelineProcessor {
 
       // Get submission and pipeline
       const submission = await this.submissionModel.findById(submissionId).exec();
+      
       if (!submission) {
-        throw new Error(`Submission ${submissionId} not found`);
+        this.logger.warn(`Submission not found: ${submissionId}`);
+        await this.submissionsService.updateStatus(submissionId, 'failed', 'Submission not found');
+        return;
       }
+
+      console.log('🔍 Looking for pipeline with formId:', formId); // Debug log
       const pipeline = await this.pipelinesService.findByFormId(formId);
+      
+      console.log('📋 Pipeline found:', pipeline ? 'YES' : 'NO'); // Debug log
+      
+      if (pipeline) {
+        console.log('📋 Pipeline steps:', pipeline.steps?.length || 0); // Debug log
+      }
 
       if (!pipeline || !pipeline.steps || pipeline.steps.length === 0) {
-        throw new Error('Pipeline not found or has no steps');
+        this.logger.warn(`No pipeline found or pipeline has no steps for form: ${formId}`);
+        await this.submissionsService.updateStatus(submissionId, 'completed');
+        return;
       }
 
       const previousOutputs: Array<{ stepNumber: number; output: string }> = [];
@@ -46,6 +60,8 @@ export class PipelineProcessor {
       for (const step of pipeline.steps) {
         const startTime = Date.now();
 
+        this.logger.log(`Executing step ${step.stepNumber} for submission ${submissionId}`);
+
         // Build prompt with form data and previous outputs
         const prompt = this.aiService.buildPrompt(
           step.prompt,
@@ -53,29 +69,24 @@ export class PipelineProcessor {
           previousOutputs,
         );
 
-        this.logger.log(`Executing step ${step.stepNumber} for submission ${submissionId}`);
-
-        
-        const modelToUse = step.model || 'gemini-1.5-flash'; 
-
         // Call AI API
         const { text, tokenCount } = await this.aiService.generateResponse(
           prompt,
-          modelToUse,
+          step.model || 'gemini-1.5-pro',
         );
 
         const duration = Date.now() - startTime;
 
         // Save step output
         await this.submissionsService.createStepOutput({
-          submissionId,
+          submissionId: new Types.ObjectId(submissionId),
           stepNumber: step.stepNumber,
           stepName: step.name,
-          prompt: step.prompt,
+          prompt: prompt,
           output: text,
           tokenCount,
           duration,
-          model: modelToUse, // Use the correct model name
+          model: step.model || 'gemini-1.5-pro',
           executedAt: new Date(),
         });
 
@@ -85,7 +96,7 @@ export class PipelineProcessor {
           output: text,
         });
 
-        this.logger.log(`Completed step ${step.stepNumber} in ${duration}ms using ${modelToUse}`);
+        this.logger.log(`Completed step ${step.stepNumber} in ${duration}ms`);
       }
 
       // Update submission status to completed

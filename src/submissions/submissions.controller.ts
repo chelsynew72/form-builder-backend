@@ -55,11 +55,13 @@ async create(
   }
 }
 
-  @Get('form/:formId')
-  @UseGuards(JwtAuthGuard)
-  findAll(@Param('formId') formId: string, @Query() query: QuerySubmissionsDto) {
-    return this.submissionsService.findAll(formId, query);
-  }
+ 
+@Get('form/:formId')
+@UseGuards(JwtAuthGuard)
+findAll(@Param('formId') formId: string, @Query() query: QuerySubmissionsDto) {
+  console.log('📥 Received request for formId:', formId); // Debug log
+  return this.submissionsService.findAll(formId, query);
+}
 
   @Get(':id')
   @UseGuards(JwtAuthGuard)

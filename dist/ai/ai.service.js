@@ -16,29 +16,35 @@ const generative_ai_1 = require("@google/generative-ai");
 let AiService = class AiService {
     configService;
     genAI;
+    defaultModel;
     constructor(configService) {
         this.configService = configService;
         const apiKey = this.configService.get('GOOGLE_API_KEY');
         if (!apiKey) {
             throw new Error('Missing required environment variable: GOOGLE_API_KEY');
         }
+        this.defaultModel = this.configService.get('GEMINI_MODEL') || 'gemini-2.5-flash';
+        console.log(`🤖 AI Service initialized with model: ${this.defaultModel}`);
         this.genAI = new generative_ai_1.GoogleGenerativeAI(apiKey);
     }
-    async generateResponse(prompt, model = 'gemini-1.5-pro') {
+    async generateResponse(prompt, model) {
+        const modelToUse = model || this.defaultModel;
         try {
-            const geminiModel = this.genAI.getGenerativeModel({ model });
+            console.log(`🤖 Using model: ${modelToUse}`);
+            const geminiModel = this.genAI.getGenerativeModel({ model: modelToUse });
             const result = await geminiModel.generateContent(prompt);
             const response = result.response;
             const text = response.text();
             const tokenCount = (response.usageMetadata?.promptTokenCount || 0) +
                 (response.usageMetadata?.candidatesTokenCount || 0);
+            console.log(`✅ AI response generated (${tokenCount} tokens)`);
             return {
                 text,
                 tokenCount,
             };
         }
         catch (error) {
-            console.error('Gemini API Error:', error);
+            console.error('❌ Gemini API Error:', error);
             throw new Error(`AI generation failed: ${error.message}`);
         }
     }
