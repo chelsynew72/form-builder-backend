@@ -18,13 +18,13 @@ import { User, UserSchema } from '../users/schemas/user.schema';
     }),
     MongooseModule.forFeature([
       { name: Submission.name, schema: SubmissionSchema },
-      { name: Form.name, schema: FormSchema }, // ✅ Add this
-      { name: User.name, schema: UserSchema }, // ✅ Add this
+      { name: Form.name, schema: FormSchema }, 
+      { name: User.name, schema: UserSchema }, 
     ]),
     AiModule,
     SubmissionsModule,
     PipelinesModule,
-    EmailModule, // ✅ Add this
+    EmailModule, 
   ],
   providers: [PipelineProcessor],
   exports: [BullModule],

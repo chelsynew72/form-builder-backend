@@ -149,7 +149,7 @@ export class PipelineProcessor {
         error.message,
       );
 
-      // ✅ Send "Processing Failed" email
+      
       if (user && user.email) {
         const dashboardUrl = `${process.env.FRONTEND_URL || 'http://localhost:3000'}/forms/${formId}/submissions/${submissionId}`;
         await this.emailService.sendProcessingFailedNotification(
