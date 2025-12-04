@@ -14,7 +14,10 @@ const pipeline_processor_1 = require("../ai/processors/pipeline.processor");
 const ai_module_1 = require("../ai/ai.module");
 const submissions_module_1 = require("../submissions/submissions.module");
 const pipelines_module_1 = require("../pipelines/pipelines.module");
+const email_module_1 = require("../email/email.module");
 const submission_schema_1 = require("../submissions/schemas/submission.schema");
+const form_schema_1 = require("../forms/schemas/form.schema");
+const user_schema_1 = require("../users/schemas/user.schema");
 let QueueModule = class QueueModule {
 };
 exports.QueueModule = QueueModule;
@@ -26,10 +29,13 @@ exports.QueueModule = QueueModule = __decorate([
             }),
             mongoose_1.MongooseModule.forFeature([
                 { name: submission_schema_1.Submission.name, schema: submission_schema_1.SubmissionSchema },
+                { name: form_schema_1.Form.name, schema: form_schema_1.FormSchema },
+                { name: user_schema_1.User.name, schema: user_schema_1.UserSchema },
             ]),
             ai_module_1.AiModule,
             submissions_module_1.SubmissionsModule,
             pipelines_module_1.PipelinesModule,
+            email_module_1.EmailModule,
         ],
         providers: [pipeline_processor_1.PipelineProcessor],
         exports: [bull_1.BullModule],

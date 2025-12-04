@@ -1,4 +1,4 @@
-
+// backend/src/queue/queue.module.ts
 import { Module } from '@nestjs/common';
 import { BullModule } from '@nestjs/bull';
 import { MongooseModule } from '@nestjs/mongoose';
@@ -6,7 +6,10 @@ import { PipelineProcessor } from '../ai/processors/pipeline.processor';
 import { AiModule } from '../ai/ai.module';
 import { SubmissionsModule } from '../submissions/submissions.module';
 import { PipelinesModule } from '../pipelines/pipelines.module';
+import { EmailModule } from '../email/email.module'; 
 import { Submission, SubmissionSchema } from '../submissions/schemas/submission.schema';
+import { Form, FormSchema } from '../forms/schemas/form.schema'; 
+import { User, UserSchema } from '../users/schemas/user.schema'; 
 
 @Module({
   imports: [
@@ -15,10 +18,13 @@ import { Submission, SubmissionSchema } from '../submissions/schemas/submission.
     }),
     MongooseModule.forFeature([
       { name: Submission.name, schema: SubmissionSchema },
+      { name: Form.name, schema: FormSchema }, // ✅ Add this
+      { name: User.name, schema: UserSchema }, // ✅ Add this
     ]),
     AiModule,
     SubmissionsModule,
     PipelinesModule,
+    EmailModule, // ✅ Add this
   ],
   providers: [PipelineProcessor],
   exports: [BullModule],

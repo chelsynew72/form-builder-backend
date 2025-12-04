@@ -18,6 +18,7 @@ const pipelines_module_1 = require("./pipelines/pipelines.module");
 const submissions_module_1 = require("./submissions/submissions.module");
 const ai_module_1 = require("./ai/ai.module");
 const queue_module_1 = require("./queue/queue.module");
+const email_module_1 = require("./email/email.module");
 let AppModule = class AppModule {
 };
 exports.AppModule = AppModule;
@@ -51,6 +52,7 @@ exports.AppModule = AppModule = __decorate([
             submissions_module_1.SubmissionsModule,
             ai_module_1.AiModule,
             queue_module_1.QueueModule,
+            email_module_1.EmailModule,
         ],
     })
 ], AppModule);
