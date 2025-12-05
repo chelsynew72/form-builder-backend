@@ -8,6 +8,12 @@ export declare class User {
     apiKey?: string;
     createdAt: Date;
     updatedAt: Date;
+    emailPreferences?: {
+        newSubmission: boolean;
+        processingComplete: boolean;
+        processingFailed: boolean;
+        weeklyDigest: boolean;
+    };
 }
 export type UserDocument = User & Document;
 export declare const UserSchema: import("mongoose").Schema<User, import("mongoose").Model<User, any, any, any, Document<unknown, any, User, any, {}> & User & {

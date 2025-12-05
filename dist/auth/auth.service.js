@@ -55,6 +55,7 @@ const bcrypt = __importStar(require("bcrypt"));
 let AuthService = class AuthService {
     userModel;
     jwtService;
+    formModel;
     constructor(userModel, jwtService) {
         this.userModel = userModel;
         this.jwtService = jwtService;
@@ -102,6 +103,58 @@ let AuthService = class AuthService {
                 lastName: user.lastName,
             },
         };
+    }
+    async updateProfile(userId, updateDto) {
+        const user = await this.userModel.findById(userId);
+        if (!user) {
+            throw new common_1.UnauthorizedException('User not found');
+        }
+        if (updateDto.email && updateDto.email !== user.email) {
+            const existingUser = await this.userModel.findOne({ email: updateDto.email });
+            if (existingUser) {
+                throw new common_1.UnauthorizedException('Email already in use');
+            }
+        }
+        user.firstName = updateDto.firstName || user.firstName;
+        user.lastName = updateDto.lastName || user.lastName;
+        user.email = updateDto.email || user.email;
+        await user.save();
+        return {
+            message: 'Profile updated successfully',
+            user: {
+                _id: user._id,
+                firstName: user.firstName,
+                lastName: user.lastName,
+                email: user.email,
+            },
+        };
+    }
+    async changePassword(userId, currentPassword, newPassword) {
+        const user = await this.userModel.findById(userId);
+        if (!user) {
+            throw new common_1.UnauthorizedException('User not found');
+        }
+        const isPasswordValid = await bcrypt.compare(currentPassword, user.password);
+        if (!isPasswordValid) {
+            throw new common_1.UnauthorizedException('Current password is incorrect');
+        }
+        user.password = await bcrypt.hash(newPassword, 10);
+        await user.save();
+        return { message: 'Password changed successfully' };
+    }
+    async updateEmailPreferences(userId, preferences) {
+        const user = await this.userModel.findById(userId);
+        if (!user) {
+            throw new common_1.UnauthorizedException('User not found');
+        }
+        user.emailPreferences = preferences;
+        await user.save();
+        return { message: 'Email preferences updated successfully' };
+    }
+    async deleteAccount(userId) {
+        await this.formModel.deleteMany({ userId });
+        await this.userModel.findByIdAndDelete(userId);
+        return { message: 'Account deleted successfully' };
     }
     async getProfile(userId) {
         const user = await this.userModel.findById(userId).select('-password');

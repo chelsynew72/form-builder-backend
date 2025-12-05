@@ -20,6 +20,7 @@ let User = class User {
     apiKey;
     createdAt;
     updatedAt;
+    emailPreferences;
 };
 exports.User = User;
 __decorate([
@@ -54,6 +55,15 @@ __decorate([
     (0, mongoose_1.Prop)({ default: Date.now }),
     __metadata("design:type", Date)
 ], User.prototype, "updatedAt", void 0);
+__decorate([
+    (0, mongoose_1.Prop)({ type: Object, default: {
+            newSubmission: true,
+            processingComplete: true,
+            processingFailed: true,
+            weeklyDigest: false,
+        } }),
+    __metadata("design:type", Object)
+], User.prototype, "emailPreferences", void 0);
 exports.User = User = __decorate([
     (0, mongoose_1.Schema)({ timestamps: true })
 ], User);

@@ -87,7 +87,7 @@ let EmailService = EmailService_1 = class EmailService {
         }
         try {
             const info = await this.transporter.sendMail({
-                from: `"AI Form Pipeline" <${this.configService.get('SMTP_USER')}>`,
+                from: `"AI Form builder" <${this.configService.get('SMTP_USER')}>`,
                 to,
                 subject,
                 html,
@@ -182,7 +182,7 @@ let EmailService = EmailService_1 = class EmailService {
         return this.sendEmail(userEmail, subject, html);
     }
     async sendProcessingCompleteNotification(userEmail, formName, submissionId, outputsCount, dashboardUrl) {
-        const subject = `✅ Processing Complete: ${formName}`;
+        const subject = ` Processing Complete: ${formName}`;
         const html = `
       <!DOCTYPE html>
       <html>
@@ -256,7 +256,7 @@ let EmailService = EmailService_1 = class EmailService {
         return this.sendEmail(userEmail, subject, html);
     }
     async sendProcessingFailedNotification(userEmail, formName, submissionId, errorMessage, dashboardUrl) {
-        const subject = `❌ Processing Failed: ${formName}`;
+        const subject = ` Processing Failed: ${formName}`;
         const html = `
       <!DOCTYPE html>
       <html>

@@ -26,6 +26,19 @@ export class User {
 
   @Prop({ default: Date.now })
   updatedAt: Date;
+
+  @Prop({ type: Object, default: {
+  newSubmission: true,
+  processingComplete: true,
+  processingFailed: true,
+  weeklyDigest: false,
+}})
+emailPreferences?: {
+  newSubmission: boolean;
+  processingComplete: boolean;
+  processingFailed: boolean;
+  weeklyDigest: boolean;
+};
 }
 
 export type UserDocument = User & Document;

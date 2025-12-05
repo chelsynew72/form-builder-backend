@@ -34,7 +34,7 @@ export class EmailService {
     this.transporter = nodemailer.createTransport({
       host: smtpHost,
       port: smtpPort,
-      secure: smtpPort === 465, // true for 465, false for other ports
+      secure: smtpPort === 465, 
       auth: {
         user: smtpUser,
         pass: smtpPass,
@@ -247,7 +247,7 @@ export class EmailService {
     errorMessage: string,
     dashboardUrl: string,
   ): Promise<boolean> {
-    const subject = `❌ Processing Failed: ${formName}`;
+    const subject = ` Processing Failed: ${formName}`;
 
     const html = `
       <!DOCTYPE html>
