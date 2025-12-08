@@ -17,7 +17,6 @@ const common_1 = require("@nestjs/common");
 const submissions_service_1 = require("./submissions.service");
 const forms_service_1 = require("../forms/forms.service");
 const jwt_auth_guard_1 = require("../auth/guards/jwt-auth.guard");
-const create_submission_dto_1 = require("./dto/create-submission.dto");
 const query_submissions_dto_1 = require("./dto/query-submissions.dto");
 let SubmissionsController = class SubmissionsController {
     submissionsService;
@@ -26,21 +25,37 @@ let SubmissionsController = class SubmissionsController {
         this.submissionsService = submissionsService;
         this.formsService = formsService;
     }
+    test() {
+        return { message: 'Submissions controller is working!' };
+    }
     async create(createSubmissionDto, ip, userAgent) {
-        await this.formsService.findByPublicId(createSubmissionDto.formId);
-        const submission = await this.submissionsService.create({
-            ...createSubmissionDto,
-            ipAddress: ip,
-            userAgent,
-        });
-        await this.formsService.incrementSubmissionCount(createSubmissionDto.formId);
-        return {
-            success: true,
-            submissionId: submission._id,
-            message: 'Form submitted successfully. Processing started.'
-        };
+        console.log('📝 Received submission:', createSubmissionDto);
+        try {
+            const form = await this.formsService.findByPublicId(createSubmissionDto.formId);
+            console.log('✅ Form found:', form._id);
+            const submission = await this.submissionsService.create({
+                formId: form._id,
+                data: createSubmissionDto.data,
+                ipAddress: ip,
+                userAgent,
+            });
+            console.log('✅ Submission created:', submission._id);
+            await this.formsService.incrementSubmissionCount(form._id.toString());
+            return {
+                success: true,
+                data: {
+                    submissionId: submission._id.toString(),
+                },
+                message: 'Form submitted successfully. Processing started.'
+            };
+        }
+        catch (error) {
+            console.error('❌ Submission error:', error);
+            throw error;
+        }
     }
     findAll(formId, query) {
+        console.log('📥 Received request for formId:', formId);
         return this.submissionsService.findAll(formId, query);
     }
     findOne(id) {
@@ -52,12 +67,18 @@ let SubmissionsController = class SubmissionsController {
 };
 exports.SubmissionsController = SubmissionsController;
 __decorate([
+    (0, common_1.Get)('test'),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", []),
+    __metadata("design:returntype", void 0)
+], SubmissionsController.prototype, "test", null);
+__decorate([
     (0, common_1.Post)(),
     __param(0, (0, common_1.Body)()),
     __param(1, (0, common_1.Ip)()),
     __param(2, (0, common_1.Headers)('user-agent')),
     __metadata("design:type", Function),
-    __metadata("design:paramtypes", [create_submission_dto_1.CreateSubmissionDto, String, String]),
+    __metadata("design:paramtypes", [Object, String, String]),
     __metadata("design:returntype", Promise)
 ], SubmissionsController.prototype, "create", null);
 __decorate([

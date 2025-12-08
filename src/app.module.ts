@@ -10,6 +10,7 @@ import { PipelinesModule } from './pipelines/pipelines.module';
 import { SubmissionsModule } from './submissions/submissions.module';
 import { AiModule } from './ai/ai.module';
 import { QueueModule } from './queue/queue.module';
+import { EmailModule } from './email/email.module';
 
 @Module({
   imports: [
@@ -40,6 +41,7 @@ import { QueueModule } from './queue/queue.module';
     SubmissionsModule,
     AiModule,
     QueueModule,
+    EmailModule,
   ],
 })
 export class AppModule {}

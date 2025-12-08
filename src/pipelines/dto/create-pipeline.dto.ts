@@ -1,1 +1,4 @@
-export class CreatePipelineDto {}
+export class CreatePipelineDto {
+    formId: string;
+}
+

@@ -1,43 +1,56 @@
-
+// backend/src/pipelines/pipelines.service.ts
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
-import { Model } from 'mongoose';
+import { Model, Types } from 'mongoose';
 import { Pipeline } from './schemas/pipeline.schema';
 import { CreatePipelineDto } from './dto/create-pipeline.dto';
 import { UpdatePipelineDto } from './dto/update-pipeline.dto';
 
 @Injectable()
 export class PipelinesService {
-  findAll() {
-    throw new Error('Method not implemented.');
-  }
-  findOne(arg0: number) {
-    throw new Error('Method not implemented.');
-  }
-  remove(arg0: number) {
-    throw new Error('Method not implemented.');
-  }
   constructor(
     @InjectModel(Pipeline.name) private pipelineModel: Model<Pipeline>,
   ) {}
 
-  async create(createPipelineDto: CreatePipelineDto): Promise<Pipeline> {
-    const pipeline = new this.pipelineModel(createPipelineDto);
-    return pipeline.save();
+  async createOrUpdate(createPipelineDto: CreatePipelineDto): Promise<Pipeline> {
+    const { formId, ...pipelineData } = createPipelineDto;
+
+    const pipeline = await this.pipelineModel.findOneAndUpdate(
+      { formId: new Types.ObjectId(formId) }, // ✅ Convert to ObjectId
+      { formId: new Types.ObjectId(formId), ...pipelineData },
+      { 
+        new: true,
+        upsert: true,
+      }
+    ).exec();
+
+    console.log('✅ Pipeline saved for formId:', formId);
+    return pipeline;
   }
 
   async findByFormId(formId: string): Promise<Pipeline | null> {
-    return this.pipelineModel.findOne({ formId }).exec();
+    console.log('🔍 Finding pipeline for formId:', formId);
+    const pipeline = await this.pipelineModel
+      .findOne({ formId: new Types.ObjectId(formId) }) // ✅ Convert to ObjectId
+      .exec();
+    console.log('📋 Pipeline found:', pipeline ? 'YES' : 'NO');
+    return pipeline;
   }
 
   async update(formId: string, updatePipelineDto: UpdatePipelineDto): Promise<Pipeline> {
     const pipeline = await this.pipelineModel
-      .findOneAndUpdate({ formId }, updatePipelineDto, { new: true, upsert: true })
+      .findOneAndUpdate(
+        { formId: new Types.ObjectId(formId) }, // ✅ Convert to ObjectId
+        updatePipelineDto,
+        { new: true, upsert: true }
+      )
       .exec();
     return pipeline;
   }
 
   async delete(formId: string): Promise<void> {
-    await this.pipelineModel.deleteOne({ formId }).exec();
+    await this.pipelineModel
+      .deleteOne({ formId: new Types.ObjectId(formId) }) // ✅ Convert to ObjectId
+      .exec();
   }
 }

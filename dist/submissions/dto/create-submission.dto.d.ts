@@ -1,3 +1,4 @@
 export declare class CreateSubmissionDto {
-    formId: any;
+    formId: string;
+    data: Record<string, any>;
 }

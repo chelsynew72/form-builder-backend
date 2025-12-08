@@ -8,6 +8,7 @@ import * as bcrypt from 'bcrypt';
 
 @Injectable()
 export class AuthService {
+  formModel: any;
   constructor(
     @InjectModel(User.name) private userModel: Model<User>,
     private jwtService: JwtService,
@@ -74,6 +75,77 @@ export class AuthService {
       },
     };
   }
+  async updateProfile(userId: string, updateDto: any) {
+  const user = await this.userModel.findById(userId);
+  if (!user) {
+    throw new UnauthorizedException('User not found');
+  }
+
+  // Check if email is being changed and if it's already taken
+  if (updateDto.email && updateDto.email !== user.email) {
+    const existingUser = await this.userModel.findOne({ email: updateDto.email });
+    if (existingUser) {
+      throw new UnauthorizedException('Email already in use');
+    }
+  }
+
+  user.firstName = updateDto.firstName || user.firstName;
+  user.lastName = updateDto.lastName || user.lastName;
+  user.email = updateDto.email || user.email;
+
+  await user.save();
+
+  return {
+    message: 'Profile updated successfully',
+    user: {
+      _id: user._id,
+      firstName: user.firstName,
+      lastName: user.lastName,
+      email: user.email,
+    },
+  };
+}
+
+async changePassword(userId: string, currentPassword: string, newPassword: string) {
+  const user = await this.userModel.findById(userId);
+  if (!user) {
+    throw new UnauthorizedException('User not found');
+  }
+
+  // Verify current password
+  const isPasswordValid = await bcrypt.compare(currentPassword, user.password);
+  if (!isPasswordValid) {
+    throw new UnauthorizedException('Current password is incorrect');
+  }
+
+  // Hash and save new password
+  user.password = await bcrypt.hash(newPassword, 10);
+  await user.save();
+
+  return { message: 'Password changed successfully' };
+}
+
+async updateEmailPreferences(userId: string, preferences: any) {
+  const user = await this.userModel.findById(userId);
+  if (!user) {
+    throw new UnauthorizedException('User not found');
+  }
+
+  user.emailPreferences = preferences;
+  await user.save();
+
+  return { message: 'Email preferences updated successfully' };
+}
+
+async deleteAccount(userId: string) {
+  // Delete all user's forms
+  await this.formModel.deleteMany({ userId });
+  
+  // Delete user
+  await this.userModel.findByIdAndDelete(userId);
+
+  return { message: 'Account deleted successfully' };
+}
 
   async getProfile(userId: string) {
     const user = await this.userModel.findById(userId).select('-password');

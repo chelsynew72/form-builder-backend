@@ -33,6 +33,18 @@ let AuthController = class AuthController {
     getCurrentUser(user) {
         return user;
     }
+    async updateProfile(req, updateDto) {
+        return this.authService.updateProfile(req.user.userId, updateDto);
+    }
+    async changePassword(req, passwordDto) {
+        return this.authService.changePassword(req.user.userId, passwordDto.currentPassword, passwordDto.newPassword);
+    }
+    async updateEmailPreferences(req, preferences) {
+        return this.authService.updateEmailPreferences(req.user.userId, preferences);
+    }
+    async deleteAccount(req) {
+        return this.authService.deleteAccount(req.user.userId);
+    }
 };
 exports.AuthController = AuthController;
 __decorate([
@@ -57,6 +69,41 @@ __decorate([
     __metadata("design:paramtypes", [Object]),
     __metadata("design:returntype", void 0)
 ], AuthController.prototype, "getCurrentUser", null);
+__decorate([
+    (0, common_1.Put)('profile'),
+    (0, common_1.UseGuards)(jwt_auth_guard_1.JwtAuthGuard),
+    __param(0, (0, common_1.Request)()),
+    __param(1, (0, common_1.Body)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Object, Object]),
+    __metadata("design:returntype", Promise)
+], AuthController.prototype, "updateProfile", null);
+__decorate([
+    (0, common_1.Put)('password'),
+    (0, common_1.UseGuards)(jwt_auth_guard_1.JwtAuthGuard),
+    __param(0, (0, common_1.Request)()),
+    __param(1, (0, common_1.Body)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Object, Object]),
+    __metadata("design:returntype", Promise)
+], AuthController.prototype, "changePassword", null);
+__decorate([
+    (0, common_1.Put)('email-preferences'),
+    (0, common_1.UseGuards)(jwt_auth_guard_1.JwtAuthGuard),
+    __param(0, (0, common_1.Request)()),
+    __param(1, (0, common_1.Body)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Object, Object]),
+    __metadata("design:returntype", Promise)
+], AuthController.prototype, "updateEmailPreferences", null);
+__decorate([
+    (0, common_1.Delete)('account'),
+    (0, common_1.UseGuards)(jwt_auth_guard_1.JwtAuthGuard),
+    __param(0, (0, common_1.Request)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Object]),
+    __metadata("design:returntype", Promise)
+], AuthController.prototype, "deleteAccount", null);
 exports.AuthController = AuthController = __decorate([
     (0, common_1.Controller)('auth'),
     __metadata("design:paramtypes", [auth_service_1.AuthService])

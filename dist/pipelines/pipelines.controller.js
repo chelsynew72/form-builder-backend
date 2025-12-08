@@ -15,6 +15,7 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.PipelinesController = void 0;
 const common_1 = require("@nestjs/common");
 const pipelines_service_1 = require("./pipelines.service");
+const jwt_auth_guard_1 = require("../auth/guards/jwt-auth.guard");
 const create_pipeline_dto_1 = require("./dto/create-pipeline.dto");
 const update_pipeline_dto_1 = require("./dto/update-pipeline.dto");
 let PipelinesController = class PipelinesController {
@@ -22,20 +23,17 @@ let PipelinesController = class PipelinesController {
     constructor(pipelinesService) {
         this.pipelinesService = pipelinesService;
     }
-    create(createPipelineDto) {
-        return this.pipelinesService.create(createPipelineDto);
+    createOrUpdate(createPipelineDto) {
+        return this.pipelinesService.createOrUpdate(createPipelineDto);
     }
-    findAll() {
-        return this.pipelinesService.findAll();
+    findByFormId(formId) {
+        return this.pipelinesService.findByFormId(formId);
     }
-    findOne(id) {
-        return this.pipelinesService.findOne(+id);
+    update(formId, updatePipelineDto) {
+        return this.pipelinesService.update(formId, updatePipelineDto);
     }
-    update(id, updatePipelineDto) {
-        return this.pipelinesService.update(id, updatePipelineDto);
-    }
-    remove(id) {
-        return this.pipelinesService.remove(+id);
+    delete(formId) {
+        return this.pipelinesService.delete(formId);
     }
 };
 exports.PipelinesController = PipelinesController;
@@ -45,37 +43,32 @@ __decorate([
     __metadata("design:type", Function),
     __metadata("design:paramtypes", [create_pipeline_dto_1.CreatePipelineDto]),
     __metadata("design:returntype", void 0)
-], PipelinesController.prototype, "create", null);
+], PipelinesController.prototype, "createOrUpdate", null);
 __decorate([
-    (0, common_1.Get)(),
-    __metadata("design:type", Function),
-    __metadata("design:paramtypes", []),
-    __metadata("design:returntype", void 0)
-], PipelinesController.prototype, "findAll", null);
-__decorate([
-    (0, common_1.Get)(':id'),
-    __param(0, (0, common_1.Param)('id')),
+    (0, common_1.Get)('form/:formId'),
+    __param(0, (0, common_1.Param)('formId')),
     __metadata("design:type", Function),
     __metadata("design:paramtypes", [String]),
     __metadata("design:returntype", void 0)
-], PipelinesController.prototype, "findOne", null);
+], PipelinesController.prototype, "findByFormId", null);
 __decorate([
-    (0, common_1.Patch)(':id'),
-    __param(0, (0, common_1.Param)('id')),
+    (0, common_1.Put)('form/:formId'),
+    __param(0, (0, common_1.Param)('formId')),
     __param(1, (0, common_1.Body)()),
     __metadata("design:type", Function),
     __metadata("design:paramtypes", [String, update_pipeline_dto_1.UpdatePipelineDto]),
     __metadata("design:returntype", void 0)
 ], PipelinesController.prototype, "update", null);
 __decorate([
-    (0, common_1.Delete)(':id'),
-    __param(0, (0, common_1.Param)('id')),
+    (0, common_1.Delete)('form/:formId'),
+    __param(0, (0, common_1.Param)('formId')),
     __metadata("design:type", Function),
     __metadata("design:paramtypes", [String]),
     __metadata("design:returntype", void 0)
-], PipelinesController.prototype, "remove", null);
+], PipelinesController.prototype, "delete", null);
 exports.PipelinesController = PipelinesController = __decorate([
     (0, common_1.Controller)('pipelines'),
+    (0, common_1.UseGuards)(jwt_auth_guard_1.JwtAuthGuard),
     __metadata("design:paramtypes", [pipelines_service_1.PipelinesService])
 ], PipelinesController);
 //# sourceMappingURL=pipelines.controller.js.map
