@@ -5,7 +5,7 @@ const app_module_1 = require("./app.module");
 async function bootstrap() {
     const app = await core_1.NestFactory.create(app_module_1.AppModule);
     app.enableCors({
-        origin: 'http://localhost:3000',
+        origin: 'https://form-builder-client-git-vercel-773e87-chelsys-projects-a885e102.vercel.app/',
         credentials: true,
     });
     const server = app.getHttpServer();
@@ -21,7 +21,7 @@ async function bootstrap() {
         });
     }
     await app.listen(process.env.PORT ?? 3001);
-    console.log(`🔥 Application is running on: http://localhost:3001`);
+    console.log(`🔥 Application is running on: https://form-builder-backend-6wju.onrender.com`);
 }
 bootstrap();
 //# sourceMappingURL=main.js.map

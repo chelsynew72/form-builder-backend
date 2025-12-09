@@ -5,7 +5,7 @@ async function bootstrap() {
   const app = await NestFactory.create(AppModule);
   
   app.enableCors({
-    origin: 'http://localhost:3000',
+    origin: 'https://form-builder-client-git-vercel-773e87-chelsys-projects-a885e102.vercel.app/',
     credentials: true,
   });
 
@@ -25,6 +25,6 @@ async function bootstrap() {
   }
 
   await app.listen(process.env.PORT ?? 3001);
-  console.log(`🔥 Application is running on: http://localhost:3001`);
+  console.log(`🔥 Application is running on: https://form-builder-backend-6wju.onrender.com`);
 }
 bootstrap();

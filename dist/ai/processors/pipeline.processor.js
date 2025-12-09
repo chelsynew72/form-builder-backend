@@ -60,7 +60,7 @@ let PipelineProcessor = PipelineProcessor_1 = class PipelineProcessor {
                 throw new Error(`Form not found: ${formId}`);
             }
             if (user && user.email) {
-                const dashboardUrl = `${process.env.FRONTEND_URL || 'http://localhost:3000'}/forms/${formId}/submissions/${submissionId}`;
+                const dashboardUrl = `${process.env.FRONTEND_URL || 'https://form-builder-client-git-vercel-773e87-chelsys-projects-a885e102.vercel.app/'}/forms/${formId}/submissions/${submissionId}`;
                 await this.emailService.sendNewSubmissionNotification(user.email, form.name, submissionId, submission.data, dashboardUrl);
             }
             const pipeline = await this.pipelinesService.findByFormId(formId);
@@ -68,7 +68,7 @@ let PipelineProcessor = PipelineProcessor_1 = class PipelineProcessor {
                 this.logger.warn(`No pipeline found or pipeline has no steps for form: ${formId}`);
                 await this.submissionsService.updateStatus(submissionId, 'completed');
                 if (user && user.email) {
-                    const dashboardUrl = `${process.env.FRONTEND_URL || 'http://localhost:3000'}/forms/${formId}/submissions/${submissionId}`;
+                    const dashboardUrl = `${process.env.FRONTEND_URL || 'https://form-builder-client-git-vercel-773e87-chelsys-projects-a885e102.vercel.app/'}/forms/${formId}/submissions/${submissionId}`;
                     await this.emailService.sendProcessingCompleteNotification(user.email, form.name, submissionId, 0, dashboardUrl);
                 }
                 return;
@@ -100,7 +100,7 @@ let PipelineProcessor = PipelineProcessor_1 = class PipelineProcessor {
             await this.submissionsService.updateStatus(submissionId, 'completed');
             this.logger.log(`Pipeline processing completed for submission: ${submissionId}`);
             if (user && user.email) {
-                const dashboardUrl = `${process.env.FRONTEND_URL || 'http://localhost:3000'}/forms/${formId}/submissions/${submissionId}`;
+                const dashboardUrl = `${process.env.FRONTEND_URL || 'https://form-builder-client-git-vercel-773e87-chelsys-projects-a885e102.vercel.app/'}/forms/${formId}/submissions/${submissionId}`;
                 await this.emailService.sendProcessingCompleteNotification(user.email, form.name, submissionId, pipeline.steps.length, dashboardUrl);
             }
         }
@@ -108,7 +108,7 @@ let PipelineProcessor = PipelineProcessor_1 = class PipelineProcessor {
             this.logger.error(`Pipeline processing failed for submission ${submissionId}:`, error);
             await this.submissionsService.updateStatus(submissionId, 'failed', error.message);
             if (user && user.email) {
-                const dashboardUrl = `${process.env.FRONTEND_URL || 'http://localhost:3000'}/forms/${formId}/submissions/${submissionId}`;
+                const dashboardUrl = `${process.env.FRONTEND_URL || 'https://form-builder-client-git-vercel-773e87-chelsys-projects-a885e102.vercel.app/'}/forms/${formId}/submissions/${submissionId}`;
                 await this.emailService.sendProcessingFailedNotification(user.email, form.name, submissionId, error.message, dashboardUrl);
             }
             throw error;
