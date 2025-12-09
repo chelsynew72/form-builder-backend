@@ -54,7 +54,7 @@ export class PipelineProcessor {
 
       // ✅ Send "New Submission" email
       if (user && user.email) {
-        const dashboardUrl = `${process.env.FRONTEND_URL || 'https://form-builder-client-git-vercel-773e87-chelsys-projects-a885e102.vercel.app/'}/forms/${formId}/submissions/${submissionId}`;
+        const dashboardUrl = `${process.env.FRONTEND_URL || 'https://form-builder-client-xi.vercel.app/'}/forms/${formId}/submissions/${submissionId}`;
         await this.emailService.sendNewSubmissionNotification(
           user.email,
           form.name,
@@ -72,7 +72,7 @@ export class PipelineProcessor {
         
         // ✅ Send "Processing Complete" email (no steps)
         if (user && user.email) {
-          const dashboardUrl = `${process.env.FRONTEND_URL || 'https://form-builder-client-git-vercel-773e87-chelsys-projects-a885e102.vercel.app/'}/forms/${formId}/submissions/${submissionId}`;
+          const dashboardUrl = `${process.env.FRONTEND_URL || 'https://form-builder-client-xi.vercel.app/'}/forms/${formId}/submissions/${submissionId}`;
           await this.emailService.sendProcessingCompleteNotification(
             user.email,
             form.name,
@@ -131,7 +131,7 @@ export class PipelineProcessor {
 
       // ✅ Send "Processing Complete" email
       if (user && user.email) {
-        const dashboardUrl = `${process.env.FRONTEND_URL || 'https://form-builder-client-git-vercel-773e87-chelsys-projects-a885e102.vercel.app/'}/forms/${formId}/submissions/${submissionId}`;
+        const dashboardUrl = `${process.env.FRONTEND_URL || 'https://form-builder-client-xi.vercel.app/'}/forms/${formId}/submissions/${submissionId}`;
         await this.emailService.sendProcessingCompleteNotification(
           user.email,
           form.name,
@@ -151,7 +151,7 @@ export class PipelineProcessor {
 
       
       if (user && user.email) {
-        const dashboardUrl = `${process.env.FRONTEND_URL || 'https://form-builder-client-git-vercel-773e87-chelsys-projects-a885e102.vercel.app/'}/forms/${formId}/submissions/${submissionId}`;
+        const dashboardUrl = `${process.env.FRONTEND_URL || 'https://form-builder-client-xi.vercel.app/'}/forms/${formId}/submissions/${submissionId}`;
         await this.emailService.sendProcessingFailedNotification(
           user.email,
           form.name,
