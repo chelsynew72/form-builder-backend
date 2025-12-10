@@ -1,4 +1,3 @@
-
 import { Module } from '@nestjs/common';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { MongooseModule } from '@nestjs/mongoose';
@@ -14,9 +13,12 @@ import { EmailModule } from './email/email.module';
 
 @Module({
   imports: [
+    // Global Config
     ConfigModule.forRoot({
       isGlobal: true,
     }),
+
+    // MongoDB
     MongooseModule.forRootAsync({
       imports: [ConfigModule],
       useFactory: async (configService: ConfigService) => ({
@@ -24,16 +26,42 @@ import { EmailModule } from './email/email.module';
       }),
       inject: [ConfigService],
     }),
+
+    // Redis / Bull Queue
     BullModule.forRootAsync({
       imports: [ConfigModule],
-      useFactory: async (configService: ConfigService) => ({
-        redis: {
-          host: configService.get<string>('REDIS_HOST'),
-          port: configService.get<number>('REDIS_PORT'),
-        },
-      }),
+      useFactory: async (configService: ConfigService) => {
+        const redisUrl = configService.get('REDIS_URL');
+
+        // If REDIS_URL exists — use it (good for Upstash, Redis Cloud, Vercel)
+        if (redisUrl) {
+          console.log('🔴 Connecting to Redis via REDIS_URL');
+          return {
+            redis: redisUrl,
+          };
+        }
+
+        // Otherwise use host/port/password
+        const host = configService.get('REDIS_HOST', 'localhost');
+        const port = parseInt(configService.get('REDIS_PORT', '6379'));
+        const password = configService.get('REDIS_PASSWORD');
+        const useTLS = configService.get('REDIS_TLS') === 'true';
+
+        console.log(`🔴 Connecting to Redis at ${host}:${port} (TLS: ${useTLS})`);
+
+        return {
+          redis: {
+            host,
+            port,
+            password,
+            tls: useTLS ? {} : undefined,
+          },
+        };
+      },
       inject: [ConfigService],
     }),
+
+    // App Modules
     AuthModule,
     UsersModule,
     FormsModule,

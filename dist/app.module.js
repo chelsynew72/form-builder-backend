@@ -37,12 +37,28 @@ exports.AppModule = AppModule = __decorate([
             }),
             bull_1.BullModule.forRootAsync({
                 imports: [config_1.ConfigModule],
-                useFactory: async (configService) => ({
-                    redis: {
-                        host: configService.get('REDIS_HOST'),
-                        port: configService.get('REDIS_PORT'),
-                    },
-                }),
+                useFactory: async (configService) => {
+                    const redisUrl = configService.get('REDIS_URL');
+                    if (redisUrl) {
+                        console.log('🔴 Connecting to Redis via REDIS_URL');
+                        return {
+                            redis: redisUrl,
+                        };
+                    }
+                    const host = configService.get('REDIS_HOST', 'localhost');
+                    const port = parseInt(configService.get('REDIS_PORT', '6379'));
+                    const password = configService.get('REDIS_PASSWORD');
+                    const useTLS = configService.get('REDIS_TLS') === 'true';
+                    console.log(`🔴 Connecting to Redis at ${host}:${port} (TLS: ${useTLS})`);
+                    return {
+                        redis: {
+                            host,
+                            port,
+                            password,
+                            tls: useTLS ? {} : undefined,
+                        },
+                    };
+                },
                 inject: [config_1.ConfigService],
             }),
             auth_module_1.AuthModule,

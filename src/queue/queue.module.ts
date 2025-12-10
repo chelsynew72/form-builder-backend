@@ -1,4 +1,4 @@
-// backend/src/queue/queue.module.ts
+
 import { Module } from '@nestjs/common';
 import { BullModule } from '@nestjs/bull';
 import { MongooseModule } from '@nestjs/mongoose';
