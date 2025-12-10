@@ -7,10 +7,10 @@ import { Model, Types } from 'mongoose';
 import { AiService } from '../ai.service';
 import { SubmissionsService } from '../../submissions/submissions.service';
 import { PipelinesService } from '../../pipelines/pipelines.service';
-import { EmailService } from '../../email/email.service'; // ✅ Add this
+import { EmailService } from '../../email/email.service'; 
 import { Submission } from '../../submissions/schemas/submission.schema';
-import { Form } from '../../forms/schemas/form.schema'; // ✅ Add this
-import { User } from '../../users/schemas/user.schema'; // ✅ Add this
+import { Form } from '../../forms/schemas/form.schema'; 
+import { User } from '../../users/schemas/user.schema'; 
 
 @Processor('pipeline-processing')
 @Injectable()
@@ -21,10 +21,10 @@ export class PipelineProcessor {
     private aiService: AiService,
     private submissionsService: SubmissionsService,
     private pipelinesService: PipelinesService,
-    private emailService: EmailService, // ✅ Inject EmailService
+    private emailService: EmailService, 
     @InjectModel(Submission.name) private submissionModel: Model<Submission>,
-    @InjectModel(Form.name) private formModel: Model<Form>, // ✅ Add this
-    @InjectModel(User.name) private userModel: Model<User>, // ✅ Add this
+    @InjectModel(Form.name) private formModel: Model<Form>, 
+    @InjectModel(User.name) private userModel: Model<User>, 
   ) {}
 
   @Process('process-pipeline')
@@ -54,7 +54,7 @@ export class PipelineProcessor {
 
       // ✅ Send "New Submission" email
       if (user && user.email) {
-        const dashboardUrl = `${process.env.FRONTEND_URL || 'https://form-builder-client-xi.vercel.app/'}/forms/${formId}/submissions/${submissionId}`;
+        const dashboardUrl = `${process.env.FRONTEND_URL || 'https://form-builder-client-pi.vercel.app/'}/forms/${formId}/submissions/${submissionId}`;
         await this.emailService.sendNewSubmissionNotification(
           user.email,
           form.name,
@@ -72,7 +72,7 @@ export class PipelineProcessor {
         
         // ✅ Send "Processing Complete" email (no steps)
         if (user && user.email) {
-          const dashboardUrl = `${process.env.FRONTEND_URL || 'https://form-builder-client-xi.vercel.app/'}/forms/${formId}/submissions/${submissionId}`;
+          const dashboardUrl = `${process.env.FRONTEND_URL || 'https://form-builder-client-pi.vercel.app/'}/forms/${formId}/submissions/${submissionId}`;
           await this.emailService.sendProcessingCompleteNotification(
             user.email,
             form.name,
@@ -131,7 +131,7 @@ export class PipelineProcessor {
 
       // ✅ Send "Processing Complete" email
       if (user && user.email) {
-        const dashboardUrl = `${process.env.FRONTEND_URL || 'https://form-builder-client-xi.vercel.app/'}/forms/${formId}/submissions/${submissionId}`;
+        const dashboardUrl = `${process.env.FRONTEND_URL || 'https://form-builder-client-pi.vercel.app/'}/forms/${formId}/submissions/${submissionId}`;
         await this.emailService.sendProcessingCompleteNotification(
           user.email,
           form.name,
@@ -151,7 +151,7 @@ export class PipelineProcessor {
 
       
       if (user && user.email) {
-        const dashboardUrl = `${process.env.FRONTEND_URL || 'https://form-builder-client-xi.vercel.app/'}/forms/${formId}/submissions/${submissionId}`;
+        const dashboardUrl = `${process.env.FRONTEND_URL || 'https://form-builder-client-pi.vercel.app/'}/forms/${formId}/submissions/${submissionId}`;
         await this.emailService.sendProcessingFailedNotification(
           user.email,
           form.name,
