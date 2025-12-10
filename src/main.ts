@@ -4,10 +4,26 @@ import { AppModule } from './app.module';
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
   
-  app.enableCors({
-    origin: 'https://form-builder-client-xi.vercel.app',
-    credentials: true,
-  });
+
+ app.enableCors({
+  origin: (origin, callback) => {
+    const allowedOrigins = [
+      'https://form-builder-client-pi.vercel.app',
+      'https://form-builder-client-xi.vercel.app',
+      /\.vercel\.app$/
+    ];
+
+    if (!origin || allowedOrigins.some(o =>
+      typeof o === 'string' ? o === origin : o.test(origin)
+    )) {
+      callback(null, true);
+    } else {
+      callback(new Error('CORS blocked: ' + origin));
+    }
+  },
+  credentials: true,
+});
+
 
   // Log all registered routes
   const server = app.getHttpServer();
