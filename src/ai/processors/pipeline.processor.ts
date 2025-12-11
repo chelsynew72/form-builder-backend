@@ -1,4 +1,4 @@
-// backend/src/ai/processors/pipeline.processor.ts
+
 import { Processor, Process } from '@nestjs/bull';
 import type { Job } from 'bull';
 import { Injectable, Logger } from '@nestjs/common';

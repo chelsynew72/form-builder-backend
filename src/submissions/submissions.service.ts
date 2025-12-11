@@ -1,4 +1,4 @@
-// backend/src/submissions/submissions.service.ts
+
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model, Types } from 'mongoose';
@@ -39,11 +39,11 @@ export class SubmissionsService {
   async findAll(formId: string, query: QuerySubmissionsDto): Promise<{ data: Submission[], total: number }> {
     const { page = 1, limit = 20, status, search } = query;
 
-    console.log('🔍 Finding submissions for formId:', formId); // Debug log
+    console.log(' Finding submissions for formId:', formId); // Debug log
 
-    // Build filter - IMPORTANT: Convert string to ObjectId
+   
     const filter: any = { 
-      formId: new Types.ObjectId(formId) // ✅ Convert to ObjectId
+      formId: new Types.ObjectId(formId) 
     };
 
     if (status) {
