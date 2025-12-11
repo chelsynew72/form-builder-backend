@@ -14,36 +14,38 @@ export class EmailService {
   }
 
   private initializeTransporter() {
-    const emailEnabled = this.configService.get<string>('EMAIL_ENABLED') === 'true';
-    
-    if (!emailEnabled) {
-      this.logger.warn('Email service is disabled');
-      return;
-    }
-
-    const smtpHost = this.configService.get<string>('SMTP_HOST');
-    const smtpPort = this.configService.get<number>('SMTP_PORT');
-    const smtpUser = this.configService.get<string>('SMTP_USER');
-    const smtpPass = this.configService.get<string>('SMTP_PASS');
-
-    if (!smtpHost || !smtpPort || !smtpUser || !smtpPass) {
-      this.logger.warn('SMTP configuration incomplete, email service disabled');
-      return;
-    }
-
-    this.transporter = nodemailer.createTransport({
-      host: smtpHost,
-      port: smtpPort,
-      secure: smtpPort === 465, 
-      auth: {
-        user: smtpUser,
-        pass: smtpPass,
-      },
-    });
-
-    this.logger.log('Email service initialized');
+  const emailEnabled = this.configService.get<string>('EMAIL_ENABLED') === 'true';
+  
+  if (!emailEnabled) {
+    this.logger.warn('Email service is disabled');
+    return;
   }
 
+  const smtpHost = this.configService.get<string>('SMTP_HOST');
+  const smtpPort = this.configService.get<number>('SMTP_PORT');
+  const smtpUser = this.configService.get<string>('SMTP_USER');
+  const smtpPass = this.configService.get<string>('SMTP_PASS');
+
+  if (!smtpHost || !smtpPort || !smtpUser || !smtpPass) {
+    this.logger.warn('SMTP configuration incomplete, email service disabled');
+    return;
+  }
+
+  this.transporter = nodemailer.createTransport({
+    host: smtpHost,
+    port: smtpPort,
+    secure: smtpPort === 465, // ✅ true for 465, false for 587
+    auth: {
+      user: smtpUser,
+      pass: smtpPass,
+    },
+    // ✅ Add connection timeout
+    connectionTimeout: 10000, // 10 seconds
+    greetingTimeout: 10000,
+  });
+
+  this.logger.log(`Email service initialized on port ${smtpPort}`);
+}
   async sendEmail(to: string, subject: string, html: string): Promise<boolean> {
     if (!this.transporter) {
       this.logger.warn('Email transporter not configured');
