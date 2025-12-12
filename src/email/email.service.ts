@@ -1,4 +1,3 @@
-
 import { Injectable, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import * as nodemailer from 'nodemailer';
@@ -14,56 +13,121 @@ export class EmailService {
   }
 
   private initializeTransporter() {
-  const emailEnabled = this.configService.get<string>('EMAIL_ENABLED') === 'true';
-  
-  if (!emailEnabled) {
-    this.logger.warn('Email service is disabled');
-    return;
+    const emailEnabled = this.configService.get<string>('EMAIL_ENABLED') === 'true';
+    
+    if (!emailEnabled) {
+      this.logger.warn('⚠️ Email service is disabled (EMAIL_ENABLED=false)');
+      return;
+    }
+
+    const smtpHost = this.configService.get<string>('SMTP_HOST');
+    const smtpPort = this.configService.get<number>('SMTP_PORT');
+    const smtpUser = this.configService.get<string>('SMTP_USER');
+    let smtpPass = this.configService.get<string>('SMTP_PASS');
+
+    if (!smtpHost || !smtpPort || !smtpUser || !smtpPass) {
+      this.logger.error('❌ SMTP configuration incomplete:');
+      this.logger.error(`   - SMTP_HOST: ${smtpHost ? '✓' : '✗'}`);
+      this.logger.error(`   - SMTP_PORT: ${smtpPort ? '✓' : '✗'}`);
+      this.logger.error(`   - SMTP_USER: ${smtpUser ? '✓' : '✗'}`);
+      this.logger.error(`   - SMTP_PASS: ${smtpPass ? '✓' : '✗'}`);
+      this.logger.warn('⚠️ Email service disabled due to incomplete configuration');
+      return;
+    }
+
+    // 🔧 FIX: Remove all whitespace from password (Gmail app passwords have spaces)
+    smtpPass = smtpPass.replace(/\s+/g, '');
+    
+    this.logger.log(`📧 Initializing email service:`);
+    this.logger.log(`   - Host: ${smtpHost}`);
+    this.logger.log(`   - Port: ${smtpPort}`);
+    this.logger.log(`   - User: ${smtpUser}`);
+    this.logger.log(`   - Pass: ${smtpPass.substring(0, 4)}${'*'.repeat(smtpPass.length - 4)}`);
+
+    try {
+      this.transporter = nodemailer.createTransport({
+        host: smtpHost,
+        port: smtpPort,
+        secure: smtpPort === 465, // true for 465, false for other ports
+        auth: {
+          user: smtpUser,
+          pass: smtpPass,
+        },
+        // Increased timeouts for production
+        connectionTimeout: 30000, // 30 seconds
+        greetingTimeout: 30000,
+        socketTimeout: 30000,
+        // Additional options for Gmail
+        tls: {
+          rejectUnauthorized: false, // Allow self-signed certificates
+        },
+        pool: true, // Use pooled connections
+        maxConnections: 5,
+        maxMessages: 100,
+      });
+
+      // Verify connection on startup
+      this.verifyConnection();
+      
+      this.logger.log(`✅ Email service initialized successfully on port ${smtpPort}`);
+    } catch (error) {
+      this.logger.error(`❌ Failed to initialize email transporter: ${error.message}`);
+    }
   }
 
-  const smtpHost = this.configService.get<string>('SMTP_HOST');
-  const smtpPort = this.configService.get<number>('SMTP_PORT');
-  const smtpUser = this.configService.get<string>('SMTP_USER');
-  const smtpPass = this.configService.get<string>('SMTP_PASS');
-
-  if (!smtpHost || !smtpPort || !smtpUser || !smtpPass) {
-    this.logger.warn('SMTP configuration incomplete, email service disabled');
-    return;
-  }
-
-  this.transporter = nodemailer.createTransport({
-    host: smtpHost,
-    port: smtpPort,
-    secure: smtpPort === 465, 
-    auth: {
-      user: smtpUser,
-      pass: smtpPass,
-    },
-    // connection timeout
-    connectionTimeout: 10000, 
-    greetingTimeout: 10000,
-  });
-
-  this.logger.log(`Email service initialized on port ${smtpPort}`);
-}
-  async sendEmail(to: string, subject: string, html: string): Promise<boolean> {
+  /**
+   * Verify SMTP connection on startup
+   */
+  private async verifyConnection() {
     if (!this.transporter) {
-      this.logger.warn('Email transporter not configured');
-      return false;
+      return;
     }
 
     try {
+      await this.transporter.verify();
+      this.logger.log('✅ SMTP connection verified successfully');
+    } catch (error) {
+      this.logger.error(`❌ SMTP verification failed: ${error.message}`);
+      this.logger.error('   Check your SMTP credentials and firewall settings');
+    }
+  }
+
+  async sendEmail(to: string, subject: string, html: string): Promise<boolean> {
+    if (!this.transporter) {
+      this.logger.warn('⚠️ Email transporter not configured, skipping email');
+      return false;
+    }
+
+    const startTime = Date.now();
+
+    try {
+      this.logger.log(`📤 Sending email to ${to}: "${subject}"`);
+      
       const info = await this.transporter.sendMail({
-        from: `"AI Form builder" <${this.configService.get<string>('SMTP_USER')}>`,
+        from: `"AI Form Builder" <${this.configService.get<string>('SMTP_USER')}>`,
         to,
         subject,
         html,
       });
 
-      this.logger.log(`Email sent: ${info.messageId}`);
+      const duration = Date.now() - startTime;
+      this.logger.log(`✅ Email sent successfully in ${duration}ms (ID: ${info.messageId})`);
       return true;
     } catch (error) {
-      this.logger.error(`Failed to send email: ${error.message}`);
+      const duration = Date.now() - startTime;
+      this.logger.error(`❌ Failed to send email after ${duration}ms: ${error.message}`);
+      
+      // Log additional error details for debugging
+      if (error.code) {
+        this.logger.error(`   Error code: ${error.code}`);
+      }
+      if (error.command) {
+        this.logger.error(`   SMTP command: ${error.command}`);
+      }
+      if (error.response) {
+        this.logger.error(`   SMTP response: ${error.response}`);
+      }
+      
       return false;
     }
   }
@@ -166,7 +230,7 @@ export class EmailService {
     outputsCount: number,
     dashboardUrl: string,
   ): Promise<boolean> {
-    const subject = ` Processing Complete: ${formName}`;
+    const subject = `✅ Processing Complete: ${formName}`;
 
     const html = `
       <!DOCTYPE html>
@@ -249,7 +313,7 @@ export class EmailService {
     errorMessage: string,
     dashboardUrl: string,
   ): Promise<boolean> {
-    const subject = ` Processing Failed: ${formName}`;
+    const subject = `❌ Processing Failed: ${formName}`;
 
     const html = `
       <!DOCTYPE html>

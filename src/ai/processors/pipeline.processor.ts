@@ -1,4 +1,3 @@
-
 import { Processor, Process } from '@nestjs/bull';
 import type { Job } from 'bull';
 import { Injectable, Logger } from '@nestjs/common';
@@ -42,7 +41,7 @@ export class PipelineProcessor {
       // Get submission, form, and user
       const submission = await this.submissionModel.findById(submissionId).exec();
       form = await this.formModel.findById(formId).exec();
-      user = await this.userModel.findById(form.userId).exec();
+      user = await this.userModel.findById(form?.userId).exec();
 
       if (!submission) {
         throw new Error(`Submission not found: ${submissionId}`);
@@ -52,17 +51,19 @@ export class PipelineProcessor {
         throw new Error(`Form not found: ${formId}`);
       }
 
-      // ✅ Send "New Submission" email
-      if (user && user.email) {
-        const dashboardUrl = `${process.env.FRONTEND_URL || 'https://form-builder-client-pi.vercel.app/'}/forms/${formId}/submissions/${submissionId}`;
-        await this.emailService.sendNewSubmissionNotification(
-          user.email,
-          form.name,
-          submissionId,
-          submission.data,
-          dashboardUrl,
-        );
-      }
+      // Send "New Submission" email (non-blocking)
+      this.sendEmailSafely(async () => {
+        if (user && user.email) {
+          const dashboardUrl = this.buildDashboardUrl(formId, submissionId);
+          await this.emailService.sendNewSubmissionNotification(
+            user.email,
+            form.name,
+            submissionId,
+            submission.data,
+            dashboardUrl,
+          );
+        }
+      }, 'New Submission');
 
       const pipeline = await this.pipelinesService.findByFormId(formId);
 
@@ -70,17 +71,20 @@ export class PipelineProcessor {
         this.logger.warn(`No pipeline found or pipeline has no steps for form: ${formId}`);
         await this.submissionsService.updateStatus(submissionId, 'completed');
         
-        // ✅ Send "Processing Complete" email (no steps)
-        if (user && user.email) {
-          const dashboardUrl = `${process.env.FRONTEND_URL || 'https://form-builder-client-pi.vercel.app/'}/forms/${formId}/submissions/${submissionId}`;
-          await this.emailService.sendProcessingCompleteNotification(
-            user.email,
-            form.name,
-            submissionId,
-            0,
-            dashboardUrl,
-          );
-        }
+        // Send "Processing Complete" email (no steps)
+        this.sendEmailSafely(async () => {
+          if (user && user.email) {
+            const dashboardUrl = this.buildDashboardUrl(formId, submissionId);
+            await this.emailService.sendProcessingCompleteNotification(
+              user.email,
+              form.name,
+              submissionId,
+              0,
+              dashboardUrl,
+            );
+          }
+        }, 'Processing Complete (No Steps)');
+        
         return;
       }
 
@@ -98,12 +102,20 @@ export class PipelineProcessor {
           previousOutputs,
         );
 
-        const { text, tokenCount } = await this.aiService.generateResponse(
+        // Generate AI response with automatic retry and fallback
+        const { text, tokenCount, modelUsed, retries } = await this.aiService.generateResponse(
           prompt,
-          step.model || 'gemini-1.5-pro',
+          step.model || 'gemini-2.0-flash-exp',
         );
 
         const duration = Date.now() - startTime;
+
+        // Log if retries or fallback occurred
+        if (retries > 0) {
+          this.logger.warn(
+            `Step ${step.stepNumber} completed after ${retries} retries using model: ${modelUsed}`
+          );
+        }
 
         await this.submissionsService.createStepOutput({
           submissionId: new Types.ObjectId(submissionId),
@@ -113,7 +125,7 @@ export class PipelineProcessor {
           output: text,
           tokenCount,
           duration,
-          model: step.model || 'gemini-1.5-pro',
+          model: modelUsed, // Store the actual model used (may differ from requested)
           executedAt: new Date(),
         });
 
@@ -129,39 +141,101 @@ export class PipelineProcessor {
       await this.submissionsService.updateStatus(submissionId, 'completed');
       this.logger.log(`Pipeline processing completed for submission: ${submissionId}`);
 
-      // ✅ Send "Processing Complete" email
-      if (user && user.email) {
-        const dashboardUrl = `${process.env.FRONTEND_URL || 'https://form-builder-client-pi.vercel.app/'}/forms/${formId}/submissions/${submissionId}`;
-        await this.emailService.sendProcessingCompleteNotification(
-          user.email,
-          form.name,
-          submissionId,
-          pipeline.steps.length,
-          dashboardUrl,
-        );
-      }
+      // Send "Processing Complete" email
+      this.sendEmailSafely(async () => {
+        if (user && user.email) {
+          const dashboardUrl = this.buildDashboardUrl(formId, submissionId);
+          await this.emailService.sendProcessingCompleteNotification(
+            user.email,
+            form.name,
+            submissionId,
+            pipeline.steps.length,
+            dashboardUrl,
+          );
+        }
+      }, 'Processing Complete');
 
     } catch (error) {
-      this.logger.error(`Pipeline processing failed for submission ${submissionId}:`, error);
+      this.logger.error(
+        `Pipeline processing failed for submission ${submissionId}:`,
+        error.stack || error
+      );
+      
+      // Update submission status
       await this.submissionsService.updateStatus(
         submissionId,
         'failed',
-        error.message,
+        this.getErrorMessage(error),
       );
 
-      
-      if (user && user.email) {
-        const dashboardUrl = `${process.env.FRONTEND_URL || 'https://form-builder-client-pi.vercel.app/'}/forms/${formId}/submissions/${submissionId}`;
-        await this.emailService.sendProcessingFailedNotification(
-          user.email,
-          form.name,
-          submissionId,
-          error.message,
-          dashboardUrl,
-        );
-      }
+      // Send failure notification email
+      this.sendEmailSafely(async () => {
+        if (user && user.email) {
+          const dashboardUrl = this.buildDashboardUrl(formId, submissionId);
+          await this.emailService.sendProcessingFailedNotification(
+            user.email,
+            form.name,
+            submissionId,
+            this.getErrorMessage(error),
+            dashboardUrl,
+          );
+        }
+      }, 'Processing Failed');
 
       throw error;
     }
+  }
+
+  /**
+   * Send email safely without blocking pipeline processing
+   * If email fails, log the error but don't throw
+   */
+  private async sendEmailSafely(
+    emailFn: () => Promise<void>,
+    emailType: string,
+  ): Promise<void> {
+    try {
+      await Promise.race([
+        emailFn(),
+        this.timeout(10000) // 10 second timeout for emails
+      ]);
+      this.logger.log(`✉️ ${emailType} email sent successfully`);
+    } catch (error) {
+      this.logger.error(
+        `⚠️ Failed to send ${emailType} email (non-blocking):`,
+        error.message
+      );
+      // Don't throw - email failures shouldn't stop pipeline processing
+    }
+  }
+
+  /**
+   * Timeout promise helper
+   */
+  private timeout(ms: number): Promise<never> {
+    return new Promise((_, reject) =>
+      setTimeout(() => reject(new Error(`Email timeout after ${ms}ms`)), ms)
+    );
+  }
+
+  /**
+   * Build dashboard URL
+   */
+  private buildDashboardUrl(formId: string, submissionId: string): string {
+    const baseUrl = process.env.FRONTEND_URL || 'https://form-builder-client-pi.vercel.app/';
+    return `${baseUrl}/forms/${formId}/submissions/${submissionId}`;
+  }
+
+  /**
+   * Extract clean error message
+   */
+  private getErrorMessage(error: any): string {
+    if (error.message) {
+      return error.message;
+    }
+    if (typeof error === 'string') {
+      return error;
+    }
+    return 'Unknown error occurred';
   }
 }
