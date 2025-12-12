@@ -102,7 +102,7 @@ export class PipelineProcessor {
           previousOutputs,
         );
 
-        // Generate AI response with automatic retry and fallback
+        
         const { text, tokenCount, modelUsed, retries } = await this.aiService.generateResponse(
           prompt,
           step.model || 'gemini-2.0-flash-exp',
@@ -186,10 +186,7 @@ export class PipelineProcessor {
     }
   }
 
-  /**
-   * Send email safely without blocking pipeline processing
-   * If email fails, log the error but don't throw
-   */
+  
   private async sendEmailSafely(
     emailFn: () => Promise<void>,
     emailType: string,
@@ -197,7 +194,7 @@ export class PipelineProcessor {
     try {
       await Promise.race([
         emailFn(),
-        this.timeout(10000) // 10 second timeout for emails
+        this.timeout(60000) // 60 second timeout for emails (increased for slow SMTP)
       ]);
       this.logger.log(`✉️ ${emailType} email sent successfully`);
     } catch (error) {
